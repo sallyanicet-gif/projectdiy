@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bloop — créature DIY</title>
+<style>
+/* VOICE: nostalgique et ludique, un bureau d'ordinateur du début des années 2000
+   IDEA: le bureau d'un vieux PC, chaque partie du projet est une fenêtre ouverte
+   PICTURE: la créature chromée dans la fenêtre principale, avec une bulle d'info jaune
+   COLOUR and TYPE: bleu des barres de titre, beige des fenêtres, vert du bouton démarrer ; Tahoma / Trebuchet
+   LAYOUT: fond colline et ciel, fenêtres empilées, barre des tâches fixée en bas */
+:root{color-scheme:light;--face:#ece9d8;--ink:#000;--blue:#0054e3;--line:#aca899}
+*{box-sizing:border-box;min-width:0}
+body{margin:0;color:var(--ink);font:15px/1.5 Tahoma,Verdana,"Segoe UI",sans-serif;overflow-x:clip;min-height:100vh;padding-bottom:52px;
+background: linear-gradient(180deg,rgba(2, 0, 36, 1) 0%, rgba(9, 9, 121, 1) 27%, rgba(0, 212, 255, 1) 100%);
+
+background-attachment:fixed}
+.wrap{max-width:1180px;margin:0 auto;padding:clamp(16px,3vw,36px) max(3vw,10px)}
+.grid{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px;align-items:start}
+@media(max-width:820px){.grid{grid-template-columns:minmax(0,1fr)}}
+.win{background:var(--face);border:3px solid #0831d9;border-top:0;border-radius:8px 8px 0 0;box-shadow:2px 4px 14px rgba(0,0,40,.4);margin-bottom:20px;overflow:hidden}
+.bar{display:flex;align-items:center;gap:7px;height:30px;padding:0 4px 0 8px;color:#fff;font:bold 14px "Trebuchet MS",Tahoma,sans-serif;text-shadow:1px 1px #0f1089;
+background:linear-gradient(180deg,#0997ff 0%,#0053ee 8%,#0050ee 40%,#0066ff 88%,#0066ff 93%,#005bff 95%,#003dd7 96%,#003dd7 100%);border-radius:7px 7px 0 0}
+.bar .ico{width:16px;height:16px;border-radius:50%;flex:none;background:radial-gradient(circle at 35% 30%,#fff,#9fd8ff 40%,#2a6cf0)}
+.bar .t{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ctrls{display:flex;gap:2px;margin-left:auto;flex:none}
+.ctrls i{width:21px;height:21px;border:1px solid #fff;border-radius:3px;display:grid;place-items:center;font:bold 13px/1 Tahoma,sans-serif;font-style:normal;
+background:linear-gradient(180deg,#3c8cfe,#1f5fe0);box-shadow:inset 0 -1px 2px rgba(0,0,0,.3)}
+.ctrls i.x{background:linear-gradient(180deg,#f08a5d,#d6461a)}
+.menu{display:flex;gap:16px;padding:3px 10px;border-bottom:1px solid #d4d0c8;font-size:13px;background:var(--face)}
+.body{padding:14px;background:var(--face)}
+h1{font:bold clamp(30px,5vw,44px)/1.05 "Trebuchet MS",Tahoma,sans-serif;margin:0 0 4px;color:#0b3fb5;text-wrap:balance}
+h2{font:bold 20px/1.15 "Trebuchet MS",Tahoma,sans-serif;margin:0 0 10px;color:#0b3fb5}
+p{margin:0 0 10px;max-width:68ch}
+.sub{margin-bottom:12px}
+.stage{position:relative;display:grid;place-items:center;min-height:380px;padding:34px 0 10px;margin-bottom:10px;
+background:#fff;border:1px solid #7f9db9;box-shadow:inset 1px 1px 3px rgba(0,0,0,.15)}
+.device{position:relative;width:min(280px,68vw);aspect-ratio:1;border-radius:50%;cursor:grab;touch-action:none;user-select:none;
+background:radial-gradient(circle at 30% 22%,#fff 0 8%,#e6eef7 18%,#a9b8cc 42%,#f4f8fc 58%,#8394ad 78%,#dfe7f1 92%);
+box-shadow:0 14px 30px rgba(0,30,100,.3),inset 0 -8px 18px rgba(0,0,0,.18),inset 0 8px 14px rgba(255,255,255,.9);transition:transform .35s cubic-bezier(.3,1.6,.5,1)}
+.device.drag{transition:none;cursor:grabbing}
+.device::before{content:"";position:absolute;top:-32px;left:50%;width:44px;height:44px;margin-left:-22px;border-radius:50%;border:9px solid #b9c6d8;border-bottom-color:transparent;z-index:-1}
+.screen{position:absolute;inset:11%;border-radius:50%;background:radial-gradient(circle,#141428,#05050c 70%);box-shadow:inset 0 4px 14px rgba(0,0,0,.8),0 0 0 4px #6f7f9c,0 0 0 6px #e9eef7;overflow:hidden}
+.screen svg{width:100%;height:100%;display:block}
+.screen::after{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(155deg,rgba(255,255,255,.28) 0 22%,transparent 40%);pointer-events:none}
+.shiver{animation:shiv .09s linear infinite}@keyframes shiv{0%{translate:-2px 0}50%{translate:2px 1px}100%{translate:-1px -1px}}
+.wobble{animation:wob .5s ease}@keyframes wob{25%{rotate:-14deg}50%{rotate:12deg}75%{rotate:-6deg}}
+.bubble{position:absolute;top:10px;right:max(3%,6px);max-width:210px;background:#ffffe1;color:#000;border:1px solid #000;border-radius:8px;padding:6px 10px 6px 30px;font-size:13px;box-shadow:2px 2px 4px rgba(0,0,0,.25)}
+.bubble::before{content:"i";position:absolute;left:8px;top:50%;margin-top:-8px;width:16px;height:16px;border-radius:50%;background:#1d5fd6;color:#fff;font:bold 12px/16px Georgia,serif;text-align:center}
+.bubble::after{content:"";position:absolute;bottom:-11px;left:24px;border:10px solid transparent;border-top-color:#000;border-bottom:0;border-left-width:0}
+.heart{position:absolute;pointer-events:none;font-size:24px;color:#e0249f;animation:up 1.2s ease-out forwards}
+@keyframes up{to{transform:translateY(-110px) scale(1.4);opacity:0}}
+.hint{font-size:13px;color:#444;margin:0 0 10px}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button{font:14px Tahoma,Verdana,sans-serif;min-height:44px;min-width:96px;padding:0 14px;border:1px solid #003c74;border-radius:3px;color:#000;cursor:pointer;
+background:linear-gradient(180deg,#fff 0%,#ecebe6 86%,#d6d0c5 100%)}
+button:hover{box-shadow:inset 0 -2px #f8b636,inset 0 2px #ffe7a2,inset 2px 0 #fbd27f,inset -2px 0 #fbd27f}
+button:active{background:linear-gradient(180deg,#cdcac3,#e3e3db 20%,#fff)}
+button:focus-visible{outline:1px dotted #000;outline-offset:-5px}
+button.on{background:linear-gradient(180deg,#d8e9ff,#b5d3ff 86%,#8db8f5);box-shadow:inset 0 0 0 2px #7ab0f0}
+fieldset{border:1px solid #d0d0bf;border-radius:4px;margin:0 0 12px;padding:8px 12px 12px}
+legend{color:#0046d5;padding:0 4px}
+.gauge{display:grid;grid-template-columns:6.5em minmax(0,1fr);gap:10px;align-items:center;margin:8px 0;font-size:14px}
+.track{height:18px;border:1px solid #686868;border-radius:3px;background:#fff;padding:2px;box-shadow:inset 1px 1px 2px rgba(0,0,0,.2)}
+.fill{height:100%;width:0;transition:width .2s;
+background:repeating-linear-gradient(90deg,var(--c,#2ec02e) 0 8px,transparent 8px 10px),linear-gradient(180deg,rgba(255,255,255,.6),transparent)}
+.mood{font:bold 20px "Trebuchet MS",Tahoma,sans-serif;margin:0 0 4px;color:#0b3fb5}
+.card{display:grid;grid-template-columns:auto minmax(0,1fr);gap:4px 14px;font-size:14px}.card b{font-weight:400;color:#555}
+.rar{display:inline-block;padding:0 8px;border-radius:3px;font-size:12px;color:#fff}
+table{width:100%;border-collapse:collapse;font-size:14px;background:#fff;border:1px solid #7f9db9}
+th{font-weight:400;text-align:left;padding:4px 8px;background:linear-gradient(180deg,#fff,#ebeadb);border-bottom:2px solid #d6d2c2;border-right:1px solid #d6d2c2}
+td{padding:6px 8px;border-bottom:1px solid #eee;vertical-align:top}
+td.n{text-align:right;white-space:nowrap}
+ol{margin:0;padding-left:1.4em}ol li{margin:5px 0}
+.team{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.member{display:flex;gap:12px;align-items:center;background:#fff;border:1px solid #7f9db9;padding:10px}
+.av{width:48px;height:48px;flex:none;border-radius:6px;border:2px solid #fff;box-shadow:0 0 0 1px #7f9db9;background:linear-gradient(135deg,#ffd06b,#f08a5d)}
+.av.b{background:linear-gradient(135deg,#9fd8ff,#2a6cf0)}
+.member strong{display:block}
+.small{font-size:12px;color:#444}
+a{color:#0033cc}
+.status{display:flex;gap:2px;padding:3px;background:var(--face);border-top:1px solid #d4d0c8;font-size:12px}
+.status span{flex:1;padding:1px 6px;border:1px solid #c6c3b6;box-shadow:inset 1px 1px #fff}
+.taskbar{position:fixed;left:0;right:0;bottom:0;height:40px;display:flex;align-items:stretch;z-index:10;
+background:linear-gradient(180deg,#1f2f86 0,#3165c4 3%,#3682e5 6%,#4490e6 10%,#3883e5 12%,#2b71e0 15%,#2663da 18%,#235bd6 20%,#2258d5 23%,#2157d6 38%,#245ddb 54%,#2562df 86%,#245fdc 89%,#2158d4 92%,#1d4ec0 95%,#1941a5 98%)}
+.start{display:flex;align-items:center;gap:6px;padding:0 22px 0 12px;color:#fff;font:italic bold 19px "Trebuchet MS",sans-serif;text-shadow:1px 1px 2px rgba(0,0,0,.6);border-radius:0 14px 14px 0;
+background:linear-gradient(180deg,#3c8f3c 0%,#5cc15c 10%,#3faa3f 45%,#2e8f2e 85%,#256f25 100%);box-shadow:inset -2px 0 4px rgba(0,0,0,.3)}
+.start i{width:18px;height:18px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#b8ff8a 40%,#3fae00)}
+.tasks{display:flex;gap:4px;padding:5px 8px;flex:1;overflow:hidden}
+.task{display:flex;align-items:center;gap:6px;color:#fff;font-size:13px;padding:0 10px;min-width:0;max-width:170px;border-radius:3px;white-space:nowrap;overflow:hidden;
+background:linear-gradient(180deg,#3c81f3,#2c6ae8);box-shadow:inset 0 0 0 1px rgba(0,0,0,.3)}
+.task.act{background:linear-gradient(180deg,#1e52b7,#1a4aa8)}
+.tray{display:flex;align-items:center;padding:0 14px;color:#fff;font-size:13px;border-left:1px solid #092e9e;
+background:linear-gradient(180deg,#0c59b9,#139ee9 6%,#18b5f2 10%,#139beb 14%,#1290e8 19%,#0d8dea 63%,#0d9ff1 81%,#0f9eed 88%,#119be9 91%,#1392e2 94%,#137ed7 97%,#095bc9)}
+@media(max-width:600px){.tasks{display:none}.start{flex:none}.tray{margin-left:auto}.menu{display:none}
+ table{font-size:13px}.stack thead{display:none}.stack tr{display:grid;padding-block:8px;border-bottom:1px solid #eee}.stack td{display:flow-root;border:0;padding:3px 8px;padding-inline-start:8em;text-align:start}.stack td::before{content:attr(data-l);float:inline-start;width:7.5em;margin-inline-start:-7.6em;color:#555}.stack td:empty{display:none}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+<script>new MutationObserver(()=>{for(const c of document.querySelectorAll('.stack td:not([data-l])')){let i=0,p=c;while(p=p.previousElementSibling)i+=p.colSpan;c.dataset.l=c.closest('table').rows[0].cells[i]?.textContent||''}}).observe(document,{childList:true,subtree:true})</script>
+</head>
+<body>
+<div class="wrap">
+  <div class="grid">
+    <div class="win">
+      <div class="bar"><span class="ico"></span><span class="t">Bloop.exe</span><span class="ctrls"><i>_</i><i>□</i><i class="x">×</i></span></div>
+      <div class="menu"><span>Fichier</span><span>Édition</span><span>Affichage</span><span>?</span></div>
+      <div class="body">
+        <h1>Bobby</h1>
+        <p class="sub">Une petite créature numérique à porter sur soi, qui réagit à son environnement. Projet DIY de Lévy CINQ-VAL et Neidjah ANICET.</p>
+        <div class="stage">
+          <div class="device" id="device" role="img" aria-label="La créature Bloop"><div class="screen"><svg id="eyes" viewBox="0 0 200 200"></svg></div></div>
+          <div class="bubble" id="bubble" aria-live="polite">salut !</div>
+        </div>
+        <p class="hint">Clique dessus pour le caresser, attrape-le et secoue-le pour lui donner le tournis.</p>
+        <div class="btns">
+          <button id="bNoise">Faire du bruit</button>
+          <button id="bShake">Secouer</button>
+          <button id="bCold">Climatisation</button>
+          <button id="bPet">Caresser</button>
+        </div>
+      </div>
+      <div class="status"><span id="stMood">Humeur : calme</span><span>Bloop prêt</span></div>
+    </div>
+
+    <div>
+      <div class="win">
+        <div class="bar"><span class="ico"></span><span class="t">Gestionnaire des humeurs</span><span class="ctrls"><i>_</i><i>□</i><i class="x">×</i></span></div>
+        <div class="body">
+          <fieldset><legend>Humeur actuelle</legend>
+            <p class="mood" id="mood">Calme</p>
+            <div id="gauges"></div>
+          </fieldset>
+        </div>
+      </div>
+      <div class="win">
+        <div class="bar"><span class="ico"></span><span class="t">Propriétés de Bobby</span><span class="ctrls"><i class="x">×</i></span></div>
+        <div class="body">
+          <fieldset><legend>Carte d'identité</legend><div class="card" id="card"></div></fieldset>
+          <div class="btns">
+            <button id="bNew">Nouvelle créature</button>
+            <button id="bSensors">Capteurs du téléphone</button>
+          </div>
+          <p class="small" id="sensorMsg" style="margin-top:10px">Chaque créature naît avec ses propres yeux et sa personnalité.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="win">
+      <div class="bar"><span class="ico"></span><span class="t">Le projet - Bloc-notes</span><span class="ctrls"><i>_</i><i>□</i><i class="x">×</i></span></div>
+      <div class="body">
+        <h2>Le projet</h2>
+        <p>Bobby est un compagnon de poche : il devient anxieux quand c'est bruyant, frissonne quand il a froid, a le tournis quand on le secoue et se fâche si on insiste.</p>
+        <p>L'idée vient  de <a href="https://hesjustalittleguy.com">Starboy</a>, une créature numérique de la marque Creature. Bloop est notre version DIY, avec nos propres yeux et notre propre personnage.</p>
+        <h2 style="margin-top:16px">Les étapes</h2>
+        <ol>
+          <li><strong>Les yeux</strong> : dessinés dans Figma, affichés sur un écran rond.</li>
+          <li><strong>Les humeurs</strong> : l'accéléromètre détecte les secousses.</li>
+          <li><strong>Les sens</strong> : un capteur de température et un micro.</li>
+          <li><strong>Le boîtier</strong> : imprimé en 3D, avec un anneau pour mousqueton.</li>
+          <li><strong>Les bonus</strong> : reconnaissance de gestes et échange d'yeux entre créatures.</li>
+        </ol>
+      </div>
+    </div>
+    <div class="win">
+      <div class="bar"><span class="ico"></span><span class="t">Matériel - Explorateur</span><span class="ctrls"><i>_</i><i>□</i><i class="x">×</i></span></div>
+      <div class="body">
+        <h2>Le matériel</h2>
+        <table class="stack">
+          <thead><tr><th>Composant</th><th>Rôle</th><th style="text-align:right">Prix</th></tr></thead>
+          <tbody id="parts"></tbody>
+        </table>
+        <p class="small" style="margin-top:10px">Prix indicatifs. Environ 35 € sans la caméra, 55 € avec.</p>
+      </div>
+      <div class="status"><span>5 objet(s)</span><span>≈ 35 à 55 €</span></div>
+    </div>
+  </div>
+
+  <div class="win">
+    <div class="bar"><span class="ico"></span><span class="t">Comptes d'utilisateurs</span><span class="ctrls"><i>_</i><i>□</i><i class="x">×</i></span></div>
+    <div class="body">
+      <h2>L'équipe</h2>
+      <div class="team">
+        <div class="member"><span class="av"></span><span><strong>Lévy CINQ-VAL</strong>Partie manuelle</span></div>
+        <div class="member"><span class="av b"></span><span><strong>Neidjah ANICET</strong>Partie informatique</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="taskbar">
+  <div class="start"><i></i>démarrer</div>
+  <div class="tasks"><span class="task act">Bloop.exe</span><span class="task">Gestionnaire des humeurs</span><span class="task">Le projet - Bloc-notes</span></div>
+  <div class="tray" id="clock">--:--</div>
+</div>
+<script>
+{
+const parts=[
+  ["Waveshare ESP32-S3 écran rond 1,28\"","Cerveau, écran et accéléromètre","20–25 €"],
+  ["Capteur SHT40 ou BME280","Température","≈ 5 €"],
+  ["Micro INMP441","Niveau sonore","≈ 3 €"],
+  ["Batterie LiPo 3,7 V","Autonomie","≈ 5 €"],
+  ["XIAO ESP32S3 Sense (bonus)","Caméra pour les gestes","≈ 15 €"]];
+document.getElementById('parts').innerHTML=parts.map(p=>`<tr><td>${p[0]}</td><td>${p[1]}</td><td class="n">${p[2]}</td></tr>`).join('');
+
+const COLORS=['#00e5ff','#ff4fd8','#b6ff3b','#ffe14d','#9b7bff','#ff8a3d'];
+const clk=()=>{const d=new Date();document.getElementById('clock').textContent=d.getHours()+':'+String(d.getMinutes()).padStart(2,'0')};clk();setInterval(clk,20000);
+const RAR={commun:'#6b6b6b',rare:'#0054e3',épique:'#8a2be2',légendaire:'linear-gradient(90deg,#e0249f,#e0a800,#0090c0)'};
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+function gen(){
+  const r=Math.random();let rarity,style;
+  if(r<.04){rarity='légendaire';style='galaxie'}
+  else if(r<.16){rarity='épique';style='étoile'}
+  else if(r<.42){rarity='rare';style='cœur'}
+  else{rarity='commun';style=pick(['rond','ovale','pixel'])}
+  return{style,rarity,color:pick(COLORS),serial:Math.floor(Math.random()*65535).toString(16).toUpperCase().padStart(4,'0'),
+    ear:pick([['peureux',1.6],['normal',1],['cool',.6]]),pat:pick([['soupe au lait',1.6],['normale',1],['zen',.5]])};
+}
+let me=null;
+try{me=JSON.parse(localStorage.getItem('bloop'))}catch(e){}
+if(!me||!me.style)me=gen();
+const save=()=>{try{localStorage.setItem('bloop',JSON.stringify(me))}catch(e){}};
+save();
+function renderCard(){
+  const bg=RAR[me.rarity];
+  document.getElementById('card').innerHTML=
+   `<b>Nom</b><span>Bloop #${me.serial}</span><b>Yeux</b><span>${me.style} <span style="color:${me.color}">●</span></span>`+
+   `<b>Rareté</b><span><span class="rar" style="background:${bg}">${me.rarity}</span></span>`+
+   `<b>Oreille</b><span>${me.ear[0]}</span><b>Patience</b><span>${me.pat[0]}</span>`;
+}
+renderCard();
+
+const G=[['stress','Stress','#2ec02e'],['cold','Froid','#2ec02e'],['dizzy','Tournis','#2ec02e'],['anger','Colère','#2ec02e'],['joy','Joie','#2ec02e']];
+document.getElementById('gauges').innerHTML=G.map(g=>`<div class="gauge"><span>${g[1]}</span><div class="track"><div class="fill" id="g-${g[0]}" style="--c:${g[2]}"></div></div></div>`).join('');
+const S={stress:0,cold:0,dizzy:0,anger:0,joy:0};
+const MOODS={calme:['Calme','tranquille…'],content:['Content','hihi ♥'],anxieux:['Anxieux','trop de bruit !!'],froid:['Gelé','brrr… j\'ai froid'],
+  tournis:['Tournis','ça tourne…'],fache:['Fâché','ARRÊTE ! >:('],dodo:['Dodo','zzz…']};
+let mood='calme',coldOn=false,last=performance.now(),lastInput=Date.now(),blinkAt=0,nextBlink=performance.now()+2500;
+let look={x:0,y:0},target={x:0,y:0},micLevel=0,analyser=null,buf=null;
+const dev=document.getElementById('device'),svg=document.getElementById('eyes'),bubble=document.getElementById('bubble');
+const poke=()=>{lastInput=Date.now()};
+
+function hearts(){
+  const st=dev.parentElement;
+  for(let i=0;i<4;i++){const h=document.createElement('span');h.className='heart';h.textContent='♥';
+    h.style.left=(45+Math.random()*12)+'%';h.style.top=(35+Math.random()*12)+'%';h.style.animationDelay=(i*.12)+'s';
+    st.appendChild(h);setTimeout(()=>h.remove(),1600)}
+}
+function wobble(){dev.classList.remove('wobble');void dev.offsetWidth;dev.classList.add('wobble')}
+const add=(k,v)=>{S[k]=Math.min(100,S[k]+v);poke()};
+document.getElementById('bNoise').onclick=()=>add('stress',40*me.ear[1]);
+document.getElementById('bShake').onclick=()=>{add('dizzy',40);wobble()};
+document.getElementById('bPet').onclick=()=>{add('joy',35);hearts()};
+const bCold=document.getElementById('bCold');
+bCold.onclick=()=>{coldOn=!coldOn;bCold.classList.toggle('on',coldOn);bCold.textContent=coldOn?'Clim : ON':'Climatisation';poke()};
+document.getElementById('bNew').onclick=()=>{me=gen();save();renderCard();for(const k in S)S[k]=0;wobble();poke()};
+
+// glisser pour secouer, cliquer pour caresser
+let drag=null;
+dev.addEventListener('pointerdown',e=>{drag={x:e.clientX,y:e.clientY,px:e.clientX,py:e.clientY,t:performance.now(),moved:0};dev.setPointerCapture(e.pointerId);dev.classList.add('drag');poke()});
+dev.addEventListener('pointermove',e=>{
+  if(!drag)return;
+  const now=performance.now(),dx=e.clientX-drag.px,dy=e.clientY-drag.py,d=Math.hypot(dx,dy),dt=Math.max(1,now-drag.t);
+  drag.moved+=d;const speed=d/dt;
+  if(speed>.8)add('dizzy',speed*2.2);
+  drag.px=e.clientX;drag.py=e.clientY;drag.t=now;
+  const ox=Math.max(-50,Math.min(50,e.clientX-drag.x)),oy=Math.max(-50,Math.min(50,e.clientY-drag.y));
+  dev.style.transform=`translate(${ox}px,${oy}px) rotate(${ox*.3}deg)`;
+});
+const end=()=>{if(!drag)return;if(drag.moved<10){add('joy',30);hearts()}drag=null;dev.classList.remove('drag');dev.style.transform=''};
+dev.addEventListener('pointerup',end);dev.addEventListener('pointercancel',end);
+window.addEventListener('pointermove',e=>{
+  const r=dev.getBoundingClientRect(),cx=r.left+r.width/2,cy=r.top+r.height/2;
+  target.x=Math.max(-1,Math.min(1,(e.clientX-cx)/300));target.y=Math.max(-1,Math.min(1,(e.clientY-cy)/300));
+});
+
+// capteurs du téléphone (fonctionnent seulement si la page est ouverte directement, en https)
+const msg=document.getElementById('sensorMsg');
+document.getElementById('bSensors').onclick=async()=>{
+  let ok=[];
+  try{
+    if(typeof DeviceMotionEvent!=='undefined'&&DeviceMotionEvent.requestPermission)await DeviceMotionEvent.requestPermission();
+    window.addEventListener('devicemotion',ev=>{const a=ev.accelerationIncludingGravity;if(!a||a.x==null)return;
+      const m=Math.abs(Math.hypot(a.x,a.y,a.z)-9.8);if(m>6){add('dizzy',m*.9);if(m>14)wobble()}});
+    ok.push('mouvement');
+  }catch(e){}
+  try{
+    const stream=await navigator.mediaDevices.getUserMedia({audio:true});
+    const ctx=new (window.AudioContext||window.webkitAudioContext)();
+    analyser=ctx.createAnalyser();analyser.fftSize=512;buf=new Uint8Array(analyser.fftSize);
+    ctx.createMediaStreamSource(stream).connect(analyser);ok.push('micro');
+  }catch(e){}
+  msg.textContent=ok.includes('micro')?`Capteurs actifs : ${ok.join(' + ')}. Applaudis ou secoue le téléphone !`
+    :'Ici, le micro est bloqué. Ouvre la page directement (en https) sur un téléphone pour utiliser ses capteurs, ou utilise les boutons.';
+};
+
+// dessin des yeux
+function shape(cx,cy,st,col,lx,ly,small){
+  const px=cx+lx*7,py=cy+ly*7,pr=small?3:7;
+  const pupil=`<circle cx="${px}" cy="${py}" r="${pr}" fill="#05050c"/><circle cx="${px+3}" cy="${py-3}" r="2.5" fill="#fff"/>`;
+  switch(st){
+    case 'ovale':return `<ellipse cx="${cx}" cy="${cy}" rx="14" ry="24" fill="${col}"/>`+pupil;
+    case 'pixel':return `<rect x="${cx-16}" y="${cy-16}" width="32" height="32" fill="${col}"/><rect x="${px-6}" y="${py-6}" width="${pr*1.7}" height="${pr*1.7}" fill="#05050c"/>`;
+    case 'cœur':{const s=17,x=cx+lx*4,y=cy+ly*4;return `<path d="M${x} ${y+s*.9}C${x-s*1.6} ${y-s*.1} ${x-s*.6} ${y-s*1.3} ${x} ${y-s*.4}C${x+s*.6} ${y-s*1.3} ${x+s*1.6} ${y-s*.1} ${x} ${y+s*.9}Z" fill="${col}"/><circle cx="${x-6}" cy="${y-6}" r="3" fill="#fff"/>`}
+    case 'étoile':{const x=cx+lx*4,y=cy+ly*4;let p=[];for(let i=0;i<10;i++){const r=i%2?10:24,a=-Math.PI/2+i*Math.PI/5;p.push((x+r*Math.cos(a)).toFixed(1)+','+(y+r*Math.sin(a)).toFixed(1))}
+      return `<polygon points="${p.join(' ')}" fill="${col}"/><circle cx="${x-4}" cy="${y-5}" r="2.5" fill="#fff"/>`}
+    case 'galaxie':return `<circle cx="${cx}" cy="${cy}" r="21" fill="url(#gal)"/><circle cx="${px}" cy="${py}" r="${pr}" fill="#05050c"/><circle cx="${px-2}" cy="${py+2}" r="1.2" fill="#fff"/><circle cx="${px+3}" cy="${py-3}" r="2.5" fill="#fff"/>`;
+    default:return `<circle cx="${cx}" cy="${cy}" r="20" fill="${col}"/>`+pupil;
+  }
+}
+function drawEye(cx,cy,side,t,blink){
+  let col=mood==='froid'?'#a8ecff':me.color;
+  const glow=`filter="url(#glow)"`;
+  if(mood==='content')return `<path ${glow} d="M${cx-18} ${cy+6}Q${cx} ${cy-18} ${cx+18} ${cy+6}" stroke="${col}" stroke-width="8" fill="none" stroke-linecap="round"/><ellipse cx="${cx}" cy="${cy+28}" rx="10" ry="5" fill="#ff4fd8" opacity=".5"/>`;
+  if(mood==='dodo')return `<path ${glow} d="M${cx-18} ${cy+2}Q${cx} ${cy+12} ${cx+18} ${cy+2}" stroke="${col}" stroke-width="6" fill="none" stroke-linecap="round"/>`;
+  if(mood==='tournis'){let d='';for(let a=0;a<4*Math.PI;a+=.25){const r=1.7*a,x=cx+r*Math.cos(a+t*side*6),y=cy+r*Math.sin(a+t*side*6);d+=(d?'L':'M')+x.toFixed(1)+' '+y.toFixed(1)}
+    return `<path ${glow} d="${d}" stroke="${col}" stroke-width="4" fill="none" stroke-linecap="round"/>`}
+  const anx=mood==='anxieux',ang=mood==='fache';
+  const jx=anx?(Math.random()-.5)*3:0,sy=blink*(ang?.7:1),sc=anx?1.15:1;
+  let s=`<g ${glow} transform="translate(${cx+jx} ${cy}) scale(${sc} ${sc*sy}) translate(${-cx} ${-cy})">${shape(cx,cy,me.style,col,look.x,look.y,anx)}</g>`;
+  if(ang)s+=`<path d="M${cx-22*side} ${cy-34}L${cx+20*side} ${cy-20}" stroke="${col}" stroke-width="7" stroke-linecap="round"/>`;
+  return s;
+}
+function render(t){
+  const now=performance.now();
+  if(now>nextBlink){blinkAt=now;nextBlink=now+2000+Math.random()*3500}
+  const k=(now-blinkAt)/160,blink=k<1?Math.max(.08,Math.abs(1-2*k)):1;
+  let extra='';
+  if(mood==='anxieux')extra+=`<path d="M150 52q6 10 0 14q-6-4 0-14z" fill="#7fd4ff"/>`;
+  if(mood==='dodo')extra+=`<text x="128" y="62" fill="${me.color}" font-family="Tahoma" font-size="18" opacity="${.5+.5*Math.sin(t*3)}">z Z</text>`;
+  if(mood==='froid')extra+=`<text x="100" y="160" text-anchor="middle" fill="#a8ecff" font-size="16" font-family="Tahoma">* * *</text>`;
+  svg.innerHTML=`<defs><filter id="glow" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <radialGradient id="gal"><stop offset="0" stop-color="#fff"/><stop offset=".3" stop-color="#ffe14d"/><stop offset=".6" stop-color="#ff4fd8"/><stop offset="1" stop-color="#00e5ff"/></radialGradient></defs>`
+    +drawEye(70,100,1,t,blink)+drawEye(130,100,-1,t,blink)+extra;
+}
+function loop(now){
+  const dt=Math.min(.1,(now-last)/1000);last=now;const t=now/1000;
+  if(analyser){analyser.getByteTimeDomainData(buf);let s=0;for(const v of buf){const x=(v-128)/128;s+=x*x}micLevel=Math.sqrt(s/buf.length);
+    if(micLevel>.12/me.ear[1])add('stress',90*dt*me.ear[1])}
+  S.stress-=14*dt;S.dizzy-=18*dt;S.joy-=8*dt;S.anger-=6*dt/me.pat[1];
+  S.cold+=(coldOn?14:-12)*dt;
+  if(S.dizzy>70)S.anger+=30*dt*me.pat[1];
+  for(const k in S)S[k]=Math.max(0,Math.min(100,S[k]));
+  let m='calme';
+  if(S.anger>50)m='fache';else if(S.dizzy>40)m='tournis';else if(S.stress>40)m='anxieux';else if(S.cold>40)m='froid';else if(S.joy>30)m='content';else if(Date.now()-lastInput>25000)m='dodo';
+  if(m!==mood){mood=m;document.getElementById('mood').textContent=MOODS[m][0];bubble.textContent=MOODS[m][1];dev.classList.toggle('shiver',m==='froid'||m==='anxieux');document.getElementById('stMood').textContent='Humeur : '+MOODS[m][0].toLowerCase()}
+  if(!matchMedia('(pointer:fine)').matches&&!drag){target.x=Math.sin(t*.7)*.6;target.y=Math.cos(t*.45)*.4}
+  look.x+=(target.x-look.x)*.12;look.y+=(target.y-look.y)*.12;
+  for(const g of G)document.getElementById('g-'+g[0]).style.width=S[g[0]].toFixed(0)+'%';
+  render(t);
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
